@@ -26,6 +26,8 @@ const string Game::TOP = "top";
 const string Game::DOWN = "down";
 const string Game::RIGHT = "right";
 const string Game::LEFT = "left";
+size_t Game::SIZE = 25;
+size_t Game::GAP_SIZE = 1;
 
 Scene* Game::createScene()
 {
@@ -43,7 +45,7 @@ bool Game::init()
         return false;
     };
     
-    Size sceneSize = Size(this->gapSize + (Game::width+this->gapSize)*this->size, this->gapSize + (Game::height+this->gapSize)*this->size);
+    Size sceneSize = Size(Game::GAP_SIZE + (Game::width*Game::SIZE), Game::GAP_SIZE + (Game::height*Game::SIZE));
     Rect s_visibleRect = Director::getInstance()->getOpenGLView()->getVisibleRect();
     gameLayer = LayerColor::create(Color4B(255, 255, 255, 255));
     gameLayer->setContentSize(sceneSize);
@@ -51,9 +53,10 @@ bool Game::init()
     gameLayer->setPosition(s_visibleRect.origin.x+s_visibleRect.size.width/2, s_visibleRect.origin.y+s_visibleRect.size.height/2);
     this->addChild(gameLayer);
     
-    gameLayer->ignoreAnchorPointForPosition(false); //Layer和Sprite有不同，layer要设置锚点，必须先：ignoreAnchorPointForPosition(false);
+    //Layer和Sprite有不同，layer要设置锚点，必须先：ignoreAnchorPointForPosition(false);
+    gameLayer->ignoreAnchorPointForPosition(false); 
     
-    this->addRectToGame(this->rect(Vec2(this->size+this->gapSize, 0)));
+    this->addRectToGame(this->rect(Vec2(Game::SIZE, 0)));
     this->addRectToGame(this->rect(Vec2(0, 0)));
     
     auto touchLayer = Layer::create();
@@ -74,16 +77,16 @@ bool Game::init()
     
 }
 
-void Game::addRectToGame(Node *rectSprite)
+void Game::addRectToGame(RectSprite *rectSprite)
 {
     rectArr.pushBack(rectSprite);
     gameLayer->addChild(rectSprite);
 }
 
-LayerColor* Game::rect(const cocos2d::Vec2 &position)
+RectSprite* Game::rect(const cocos2d::Vec2 &position)
 {
-    LayerColor* rect = RectSprite::create(Color4B(0,0,0,255));
-    rect->setContentSize(Size(this->size, this->size));
+    RectSprite* rect = RectSprite::create(Color4B(0,0,0,255));
+    rect->setContentSize(Size(Game::SIZE, Game::SIZE));
     rect->setPosition(position);
     return rect;
 }
@@ -93,63 +96,94 @@ void Game::move(float dt)
 //    codeLayer->runAction( Sequence::create(MoveBy::create(0, Vec2(this->size+this->gapSize,0)),nullptr,nullptr));
     if (this->moveOver()) {
         unschedule(CC_SCHEDULE_SELECTOR(Game::move));
+        return;
+    }
+    for (RectSprite* rs : rectArr) {
+        rs->move();
     }
 }
 
 bool Game::moveOver()
 {
     
-    Node * r = rectArr.at(0);
+    RectSprite* r = rectArr.at(0);
     float gW = gameLayer->getContentSize().width;
     float gH = gameLayer->getContentSize().height;
     
     
     if (this->moverDirection == Game::TOP) {
-        float rX = r->getPositionX()+this->size*2+this->gapSize;
-        if (rX>gW) {
+        float rY = r->getPositionY() + Game::SIZE*2;
+        if ( rY > gH ) {
             return true;
         }
     }
     else if (this->moverDirection == Game::DOWN) {
-        float rX = r->getPositionX()+this->size*2+this->gapSize;
-        if (rX>gW) {
+        float rY = r->getPositionY() - Game::SIZE;
+        if ( rY < 0 ) {
             return true;
         }
     }
     else if (this->moverDirection == Game::RIGHT) {
-        float rX = r->getPositionX()+this->size*2+this->gapSize;
-        if (rX>gW) {
+        float rX = r->getPositionX() + Game::SIZE*2;
+        if ( rX > gW ) {
             return true;
-        }else
-        {
-            for (Node*rs : rectArr) {
-                rs->setPositionX(rs->getPositionX()+this->size+this->gapSize);
-            }
         }
     }
     else if (this->moverDirection == Game::LEFT) {
-        float rX = r->getPositionX()+this->size*2+this->gapSize;
-        if (rX>gW) {
+        float rX = r->getPositionX() - Game::SIZE;
+        if ( rX < 0 ) {
             return true;
         }
     }
+    setRectMoveDirection(this->moverDirection);
     return false;
 }
 
 bool Game::onTouchBegan(Touch *touch, Event *event)
 {
+    recordTouchBeganLocation = touch->getLocation();
     cout << "began" << endl;
     return true;
 }
 
 void Game::onTouchEnded(Touch *touch, Event *event)
 {
+    if(fabs(recordTouchBeganLocation.x-touch->getLocation().x) > fabs(recordTouchBeganLocation.y - touch->getLocation().y))
+    {
+        int touchMoveX = recordTouchBeganLocation.x-touch->getLocation().x;
+        if ( touchMoveX > 0 && this->moverDirection != Game::RIGHT) {
+            this->moverDirection = Game::LEFT;
+        }
+        if ( touchMoveX < 0 && this->moverDirection != Game::LEFT) {
+            this->moverDirection = Game::RIGHT;
+        }
+    }
+    else
+    {
+        int touchMoveY = recordTouchBeganLocation.y-touch->getLocation().y;
+        if ( touchMoveY > 0 && this->moverDirection != Game::TOP) {
+            this->moverDirection = Game::DOWN;
+        }
+        if ( touchMoveY < 0 && this->moverDirection != Game::DOWN) {
+            this->moverDirection = Game::TOP;
+        }
+    }
+    cout << touch->getLocation().x << endl;
     cout << "ended" << endl;
 }
 
 void Game::onTouchMoved(Touch* touch, Event *event)
 {
     
-    cout << touch->getLocation().x << endl;
-    this->moverDirection = Game::TOP;
+//    cout << touch->getLocation().x << endl;
+//    this->moverDirection = Game::TOP;
+}
+
+void Game::setRectMoveDirection(string &str)
+{
+    for (int i=(rectArr.size()-1); i>0; i--) {
+        string mstr = rectArr.at(i-1)->getMoveDirection();
+        rectArr.at(i)->setMoveDirection(mstr);
+    }
+    rectArr.at(0)->setMoveDirection(str);
 }

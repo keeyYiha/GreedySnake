@@ -24,36 +24,41 @@ public:
     
     virtual bool init();
 public:
+    static const string TOP;
+    static const string DOWN;
+    static const string RIGHT;
+    static const string LEFT;
+
+    static size_t SIZE;
+    static size_t GAP_SIZE;
     
     
 private:
     void bugMe(Node* node=nullptr);
     void move(float dt);
-    LayerColor* rect(const cocos2d::Vec2 &position);
-    void addRectToGame(Node *rect);
+    RectSprite* rect(const cocos2d::Vec2 &position);
+    void addRectToGame(RectSprite *rect);
     
     bool moveOver();
     
     bool onTouchBegan(Touch* touch, Event* event);
     void onTouchEnded(Touch* touch, Event* event);
     void onTouchMoved(Touch* touch, Event* event);
+    
+    void setRectMoveDirection(string &str);
 private:
-    static const string TOP;
-    static const string DOWN;
-    static const string RIGHT;
-    static const string LEFT;
     static const size_t width = 10;
     static const size_t height = 10;
-    size_t size = 25;
-    size_t gapSize = 1;
     size_t sp = 1;
     string moverDirection = "right";
     
     LayerColor* codeLayer = nullptr;
     LayerColor* gameLayer = nullptr;
-    LayerColor* squareArr[width][height];
+    RectSprite* squareArr[width][height];
     Node* MainScene = nullptr;
-    Vector<Node *> rectArr;
+    Vector<RectSprite *> rectArr;
+    
+    Vec2 recordTouchBeganLocation;
     
     
     CREATE_FUNC(Game);
