@@ -30,6 +30,7 @@ public:
     static const string LEFT;
 
     static size_t SIZE;
+    static size_t GAP_SIZE;
     
     
 private:

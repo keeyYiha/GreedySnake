@@ -27,6 +27,7 @@ const string Game::DOWN = "down";
 const string Game::RIGHT = "right";
 const string Game::LEFT = "left";
 size_t Game::SIZE = 25;
+size_t Game::GAP_SIZE = 1;
 
 Scene* Game::createScene()
 {
@@ -44,7 +45,7 @@ bool Game::init()
         return false;
     };
     
-    Size sceneSize = Size((Game::width*Game::SIZE), (Game::height*Game::SIZE));
+    Size sceneSize = Size(Game::GAP_SIZE + (Game::width*Game::SIZE), Game::GAP_SIZE + (Game::height*Game::SIZE));
     Rect s_visibleRect = Director::getInstance()->getOpenGLView()->getVisibleRect();
     gameLayer = LayerColor::create(Color4B(255, 255, 255, 255));
     gameLayer->setContentSize(sceneSize);
